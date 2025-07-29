@@ -26,7 +26,7 @@
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    // 3D stars for idle space effect
+    // 3D stars for idle space effect (from original code)
     const stars = [];
     const numStars = 400; // Dense starfield
     const speed = 0.02; // Slower speed for subtle motion
@@ -45,7 +45,7 @@
       });
     }
 
-    // Falling stars
+    // Falling stars implementation from second code sample
     const fallingStars = [];
     function createFallingStar() {
       return {
@@ -53,9 +53,9 @@
         y: -10, // Start above the canvas
         speedX: (Math.random() - 0.5) * 3, // Slower horizontal speed
         speedY: Math.random() * 2 + 2, // Slower vertical speed
-        length: Math.random() * 150 + 120, // Extremely long tail
-        opacity: Math.random() * 0.6 + 0.4, // Brighter for tail visibility
-        life: 180 // Longer life for extended tails
+        length: Math.random() * 100 + 80, // Very long tail
+        opacity: Math.random() * 0.5 + 0.5,
+        life: 150 // Longer life for slower stars
       };
     }
 
@@ -69,64 +69,53 @@
     function animate() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Update rotation angle for starfield
-      rotationAngle += 0.0002; // Slow rotation for subtle space movement
+      // Update rotation angle for starfield (from original code)
+      rotationAngle += 0.0002;
 
-      // Draw 3D stars with rotation
+      // Draw 3D stars with rotation (from original code)
       stars.forEach(star => {
-        // Update z position (move toward viewer)
         star.z -= speed;
         if (star.z <= 0) {
-          // Reset star to far distance
           star.z = spread;
           star.x = (Math.random() - 0.5) * canvas.width * 2;
           star.y = (Math.random() - 0.5) * canvas.height * 2;
-          const isRed = Math.random() < 0.25; // Reassign color
+          const isRed = Math.random() < 0.25;
           star.color = isRed ? 'rgba(255, 80, 80, ${opacity})' : 'rgba(255, 255, 255, ${opacity})';
         }
 
-        // Apply rotation to star coordinates
         const cosAngle = Math.cos(rotationAngle);
         const sinAngle = Math.sin(rotationAngle);
         const rotatedX = star.x * cosAngle - star.y * sinAngle;
         const rotatedY = star.x * sinAngle + star.y * cosAngle;
 
-        // Calculate perspective
         const scale = spread / (spread + star.z);
         const px = rotatedX * scale + canvas.width / 2;
         const py = rotatedY * scale + canvas.height / 2;
         const radius = star.radius * scale;
 
-        // Draw star with twinkle
         ctx.beginPath();
         ctx.arc(px, py, radius, 0, Math.PI * 2);
         ctx.fillStyle = star.color.replace('${opacity}', star.opacity * (0.9 + Math.sin(Date.now() * 0.001 + star.z) * 0.1));
         ctx.fill();
       });
 
-      // Update and draw falling stars (dark head, bright fading tail)
+      // Draw falling stars (from second code sample)
       fallingStars.forEach((star, index) => {
         // Create gradient for fading tail
         const gradient = ctx.createLinearGradient(
           star.x, star.y, // Start at star position
           star.x - star.speedX * star.length / 10, star.y - star.speedY * star.length / 10 // End at tail
         );
-        gradient.addColorStop(0, `rgba(255, 255, 255, ${star.opacity})`); // Bright white at head
+        gradient.addColorStop(0, `rgba(255, 255, 255, ${star.opacity})`); // Opaque at head
         gradient.addColorStop(1, `rgba(255, 255, 255, 0)`); // Transparent at tail end
 
-        // Draw tail
+        // Draw trail
         ctx.beginPath();
         ctx.moveTo(star.x, star.y);
         ctx.lineTo(star.x - star.speedX * star.length / 10, star.y - star.speedY * star.length / 10);
         ctx.strokeStyle = gradient;
-        ctx.lineWidth = 4; // Thicker tail for prominence
+        ctx.lineWidth = 2;
         ctx.stroke();
-
-        // Draw sharp, dark head
-        ctx.beginPath();
-        ctx.arc(star.x, star.y, 1.5, 0, Math.PI * 2); // Small, sharp head
-        ctx.fillStyle = `rgba(50, 50, 50, ${star.opacity})`; // Dark gray head
-        ctx.fill();
 
         // Update position
         star.x += star.speedX;
@@ -134,7 +123,7 @@
         star.life--;
 
         // Fade out
-        star.opacity -= 0.005; // Slower fade for visibility
+        star.opacity -= 0.006; // Slower fade
         if (star.life <= 0 || star.opacity <= 0 || star.y > canvas.height) {
           fallingStars.splice(index, 1); // Remove when off-screen or faded
         }
