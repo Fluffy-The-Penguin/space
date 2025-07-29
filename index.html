@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Idle Space Background with Long, Glowing Falling Stars</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      background: radial-gradient(circle at center, #1c2526 0%, #0a0e17 70%, #000000 100%);
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="stars"></canvas>
+  <script>
+    const canvas = document.getElementById('stars');
+    const ctx = canvas.getContext('2d');
+
+    // Set canvas size to window size
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // 3D stars for idle space effect
+    const stars = [];
+    const numStars = 400; // Dense starfield
+    const speed = 0.02; // Slower speed for subtle idle motion
+    const spread = 1200; // Depth for layered effect
+
+    for (let i = 0; i < numStars; i++) {
+      const isRed = Math.random() < 0.25; // 25% chance for red star
+      stars.push({
+        x: (Math.random() - 0.5) * canvas.width * 2,
+        y: (Math.random() - 0.5) * canvas.height * 2,
+        z: Math.random() * spread,
+        radius: Math.random() * 1.5 + 0.5, // Smaller stars
+        opacity: Math.random() * 0.4 + 0.4, // Dimmer for depth
+        color: isRed ? 'rgba(255, 80, 80, ${opacity})' : 'rgba(255, 255, 255, ${opacity})'
+      });
+    }
+
+    // Falling stars
+    const fallingStars = [];
+    function createFallingStar() {
+      return {
+        x: Math.random() * canvas.width,
+        y: -10, // Start above the canvas
+        speedX: (Math.random() - 0.5) * 3, // Slower horizontal speed
+        speedY: Math.random() * 2 + 2, // Slower vertical speed
+        length: Math.random() * 150 + 120, // Extremely long tail
+        opacity: Math.random() * 0.6 + 0.4, // Brighter for glow
+        life: 180 // Longer life for extended tails
+      };
+    }
+
+    // Occasionally spawn falling stars
+    setInterval(() => {
+      if (fallingStars.length < 3) { // Limit number of falling stars
+        fallingStars.push(createFallingStar());
+      }
+    }, 2000); // Every 2 seconds
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw 3D stars
+      stars.forEach(star => {
+        // Update z position (move toward viewer)
+        star.z -= speed;
+        if (star.z <= 0) {
+          // Reset star to far distance
+          star.z = spread;
+          star.x = (Math.random() - 0.5) * canvas.width * 2;
+          star.y = (Math.random() - 0.5) * canvas.height * 2;
+          const isRed = Math.random() < 0.25; // Reassign color
+          star.color = isRed ? 'rgba(255, 80, 80, ${opacity})' : 'rgba(255, 255, 255, ${opacity})';
+        }
+
+        // Calculate perspective
+        const scale = spread / (spread + star.z);
+        const px = star.x * scale + canvas.width / 2;
+        const py = star.y * scale + canvas.height / 2;
+        const radius = star.radius * scale;
+
+        // Draw star with twinkle
+        ctx.beginPath();
+        ctx.arc(px, py, radius, 0, Math.PI * 2);
+        ctx.fillStyle = star.color.replace('${opacity}', star.opacity * (0.9 + Math.sin(Date.now() * 0.001 + star.z) * 0.1));
+        ctx.fill();
+      });
+
+      // Update and draw falling stars (white with fading, glowing tail)
+      fallingStars.forEach((star, index) => {
+        // Create gradient for fading tail
+        const gradient = ctx.createLinearGradient(
+          star.x, star.y, // Start at star position
+          star.x - star.speedX * star.length / 10, star.y - star.speedY * star.length / 10 // End at tail
+        );
+        gradient.addColorStop(0, `rgba(255, 255, 255, ${star.opacity})`); // Opaque at head
+        gradient.addColorStop(1, `rgba(255, 255, 255, 0)`); // Transparent at tail end
+
+        // Draw trail with glow
+        ctx.beginPath();
+        ctx.moveTo(star.x, star.y);
+        ctx.lineTo(star.x - star.speedX * star.length / 10, star.y - star.speedY * star.length / 10);
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = 4; // Thicker tail for aura
+        ctx.shadowBlur = 10; // Glow effect
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.5)'; // White glow
+        ctx.stroke();
+        ctx.shadowBlur = 0; // Reset to avoid affecting other drawings
+
+        // Update position
+        star.x += star.speedX;
+        star.y += star.speedY;
+        star.life--;
+
+        // Fade out
+        star.opacity -= 0.005; // Slightly slower fade for visibility
+        if (star.life <= 0 || star.opacity <= 0 || star.y > canvas.height) {
+          fallingStars.splice(index, 1); // Remove when off-screen or faded
+        }
+      });
+
+      requestAnimationFrame(animate);
+    }
+    animate();
+
+    // Resize canvas on window resize
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      // Reposition stars on resize
+      stars.forEach(star => {
+        star.x = (Math.random() - 0.5) * canvas.width * 2;
+        star.y = (Math.random() - 0.5) * canvas.height * 2;
+        star.z = Math.random() * spread;
+      });
+    });
+  </script>
+</body>
+</html>
